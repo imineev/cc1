@@ -10,11 +10,11 @@ import (
 func Test_Init(t *testing.T) {
 	magnitCC := new(MAGNIT_CC)
 	mockStub := shim.NewMockStub("mockstub", magnitCC)
-	txId := "mockTxID"
+	txID := "mocktxID"
 
-	mockStub.MockTransactionStart(txId)
+	mockStub.MockTransactionStart(txID)
 	response := magnitCC.Init(mockStub)
-	mockStub.MockTransactionEnd(txId)
+	mockStub.MockTransactionEnd(txID)
 	if s := response.GetStatus(); s != 200 {
 		fmt.Println("Init test failed")
 		t.FailNow()
