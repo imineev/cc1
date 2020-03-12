@@ -312,9 +312,9 @@ func (t *MAGNIT_CC) queryByAgreementID(APIstub shim.ChaincodeStubInterface, args
 	return shim.Success(valAsbytes)
 }
 
-// ===============================================
+// =================================================================
 // queryModelByAgreementID - read a Agreement from chaincode state
-// ===============================================
+// =================================================================
 func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var AgreementID, jsonResp string
 	var err error
@@ -339,6 +339,24 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	// check of uses
+	countUse, err := strconv.Atoi(Agreement.Agreement_model_count_use)
+	if err != nil {
+		fmt.Printf("Can't convert to int AgreementAsset.Agreement_model_count_use %s\n", Agreement.Agreement_model_count_use)
+	}
+	currentCount, err := strconv.Atoi(Agreement.Agreement_model_current_count)
+	if err != nil {
+		fmt.Printf("Can't convert to int AgreementAsset.Agreement_model_current_count %s\n", Agreement.Agreement_model_current_count)
+	}
+
+	// return error if  currentCount > countUse
+
+	if currentCount >= countUse {
+		jsonResp = "{\"Error\":\"Failed to get the Model - model_current_count_query: " + " Вы достигли лимита разрешенных запросов: " + Agreement.Agreement_model_count_use + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	Agreement.Agreement_model_current_count = strconv.Itoa(currentCount)
 
 	eventPayload := "Agreement with ID " + Agreement.AgreementID + " was selected"
 	payloadAsBytes := []byte(eventPayload)
@@ -347,16 +365,17 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 		return shim.Error(fmt.Sprintf("Failed to emit event"))
 	}
 	fmt.Println("Event: Agrrement with ID " + Agreement.AgreementID + " was selected")
-	//	output := t.updateAgreement(APIstub, *Agreement)
+	// increase count of uses of Agreement
+	output := t.updateAgreement(APIstub, *Agreement)
 
-	//	if output != "Success" {
-	//		return shim.Error(err.Error())
-	//	}
+	if output != "Success" {
+		return shim.Error(err.Error())
+	}
 
 	return shim.Success(valAsbytes)
 }
 
-// ===============================================
+// ===============================================================
 // insertAgreementinfo - insert A new Agreement information
 //
 //AgreementID
@@ -372,7 +391,7 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 //Agreement_url_image
 //Agreement_status string
 //Agreement_hash string
-// ===============================================
+// ===============================================================
 func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	if len(args) != 9 {
@@ -441,15 +460,23 @@ func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, arg
 	incCount := incrementCounter(APIstub, "AgreementCounterNO")
 
 	// ==== modelagreement saved and indexed. Return success ====
-	fmt.Println("-  end insertAgreementinfo  (success) AgreementID  %d:\n", incCount)
 
+	eventPayload := "Agreement with ID " + AgreementID + " was issued and ready to confirm"
+	payloadAsBytes := []byte(eventPayload)
+	eventErr := APIstub.SetEvent("newAgreementEvent", payloadAsBytes)
+	if eventErr != nil {
+		return shim.Error(fmt.Sprintf("Failed to emit event"))
+	}
+	fmt.Println("Event: Agrrement with ID " + Agreement.AgreementID + " was selected")
+
+	fmt.Println("------  end insertAgreementinfo  (success) AgreementID: %d \n", incCount)
+	fmt.Println("------  end insertAgreementinfo  (success) AgreementID: " + AgreementID)
 	return shim.Success(nil)
 }
 
-// ===============================================
-// queryByModel_id - read data for one model/learner from chaincode state
-// TODO binfeng
-// ===============================================
+// ===============================================================
+// queryByModel_id - read data for one model from chaincode state
+// ===============================================================
 func (t *MAGNIT_CC) queryByModel_id(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var recev_id, jsonResp string
 	var err error
@@ -472,7 +499,9 @@ func (t *MAGNIT_CC) queryByModel_id(APIstub shim.ChaincodeStubInterface, args []
 
 }
 
-// approveAgreement
+// ==========================================================
+// approveAgreement - update status of Agreement to agrg[1]
+// ==========================================================
 func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	var err error
@@ -524,7 +553,9 @@ func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args [
 
 }
 
-// update count of use in the Agreement -
+// ==============================================================
+// updateAgreement update count of use in the Agreement count++
+// ==============================================================
 func (t *MAGNIT_CC) updateAgreement(APIstub shim.ChaincodeStubInterface, AgreementAsset Agreement) string {
 
 	fmt.Printf("In update AgreementId %s -- array %v", AgreementAsset.AgreementID, AgreementAsset)
@@ -558,11 +589,13 @@ func (t *MAGNIT_CC) updateAgreement(APIstub shim.ChaincodeStubInterface, Agreeme
 		return "error: Failed to PutState AgreementID, AgreementAsset"
 	}
 
-	fmt.Printf("Succes update Agreement  %v", valJSONasBytes)
+	fmt.Println("Succes update Agreement  %v", valJSONasBytes)
 	return "Success"
 }
 
-// queryAllAgreements
+// ===============================================
+// queryAllAgreements in the channel
+// ===============================================
 
 func (t *MAGNIT_CC) queryAllAgreements(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
@@ -724,6 +757,7 @@ func (t *MAGNIT_CC) getHistoryForRecord(APIstub shim.ChaincodeStubInterface, arg
 	return shim.Success(buffer.Bytes())
 }
 
+// ========================================================================================
 // getQueryResultForQueryString executes the passed in query string.
 // Result set is built and returned as a byte array containing the JSON results.
 // =========================================================================================
