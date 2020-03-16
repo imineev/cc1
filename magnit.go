@@ -188,8 +188,8 @@ func (t *MAGNIT_CC) Invoke(APIstub shim.ChaincodeStubInterface) peer.Response {
 	// Handle different functions
 	if function == "initmodel" { //create a new model or student
 		return t.initmodel(APIstub, args)
-	} else if function == "queryByModel_id" { // query a model by id, stupid name - -!
-		return t.queryByModel_id(APIstub, args)
+	} else if function == "queryByModelId" { // query a model by id, stupid name - -!
+		return t.queryByModelId(APIstub, args)
 	} else if function == "insertAgreementinfo" { //insert a Agreement
 		return t.insertAgreementinfo(APIstub, args)
 	} else if function == "queryByAgreementID" { // query a Agreement
@@ -258,7 +258,7 @@ func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string
 	model_id := "Model" + strconv.Itoa(ModelCounterNO)
 
 	// ==== Check if model already exists ====
-	modelAsBytes, err := APIstub.GetState(model_id)
+	modelAsBytes, err := APIstub.GetPrivateData("collectionModel", model_id)
 	if err != nil {
 		return shim.Error("Failed to get model: " + err.Error())
 	} else if modelAsBytes != nil {
@@ -275,7 +275,7 @@ func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string
 	}
 
 	// === Save model to state ===
-	err = APIstub.PutState(model_id, ModelJSONasBytes)
+	err = APIstub.PutPrivateData("collectionModel", model_id, ModelJSONasBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -372,7 +372,22 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 		return shim.Error(err.Error())
 	}
 
-	return shim.Success(valAsbytes)
+	modelAsbytes, err := APIstub.GetPrivateData("collectionModel", Agreement.Agreement_model_id) //get the model from chaincode state
+	if err != nil {
+		jsonResp = "{\"Error\":\"Failed to get state for " + Agreement.Agreement_model_id + "\"}"
+		return shim.Error(jsonResp)
+	} else if valAsbytes == nil {
+		jsonResp = "{\"Error\":\"model does not exist: " + Agreement.Agreement_model_id + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	Model := &Model{}
+	err = json.Unmarshal([]byte(modelAsbytes), &Model)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(modelAsbytes)
 }
 
 // ===============================================================
@@ -475,9 +490,9 @@ func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, arg
 }
 
 // ===============================================================
-// queryByModel_id - read data for one model from chaincode state
+// queryByModelId - read data for one model from chaincode state
 // ===============================================================
-func (t *MAGNIT_CC) queryByModel_id(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *MAGNIT_CC) queryByModelId(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var recev_id, jsonResp string
 	var err error
 
@@ -486,7 +501,7 @@ func (t *MAGNIT_CC) queryByModel_id(APIstub shim.ChaincodeStubInterface, args []
 	}
 
 	recev_id = args[0]
-	valAsbytes, err := APIstub.GetState(recev_id) //get the model from chaincode state
+	valAsbytes, err := APIstub.GetPrivateData("collectionModel", recev_id) //get the model from chaincode state
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + recev_id + "\"}"
 		return shim.Error(jsonResp)
