@@ -12,45 +12,50 @@ import (
 )
 
 //  Chaincode implementation
-type MAGNIT_CC struct {
+type magnitCC struct {
 }
 
-//  model's struct
+// Model data struct
 type Model struct {
+	// {"Exported": ""}
 	ObjectType string `json:"docType"` //docType is used to distinguish the various types of objects in state database
-	model_id   string `json:"model_id"`
-	model_name string `json:"model_name"`
-	Upload_org string `json:"upload_org"`
+	ModelID    string `json:"ModelID"`
+	ModelName  string `json:"ModelName"`
+	UploadOrg  string `json:"UploadOrg"`
 }
 
+// AgreementCounterNO need to Agreement ID =  Agreement + AgreementCounterNO
 type AgreementCounterNO struct {
 	Counter int `json:"counter"`
 }
 
+// ModelCounterNO need to  Model ID =  Model + ModelNO
 type ModelCounterNO struct {
 	Counter int `json:"counter"`
 }
 
+// CounterNO for counts....
 type CounterNO struct {
 	Counter int `json:"counter"`
 }
 
-//  Agreement data struct
+// Agreement data struct
 type Agreement struct {
-	ObjectType                    string `json:"docType"` //docType is used to distinguish the various types of objects in state database
-	AgreementID                   string `json:"AgreementID"`
-	Agreement_name                string `json:"Agreement_name"`
-	Agreement_model_id            string `json:"Agreement_model_id"`            // model id
-	Agreement_model_count_use     string `json:"Agreement_model_account_use"`   // model Agreement_model_account_use
-	Agreement_model_current_count string `json:"Agreement_model_current_count"` // model Agreement_model_current_count
-	Agreement_issuer              string `json:"Agreement_issuer"`              // org name issuer
-	Agreement_participant         string `json:"Agreement_participant"`         // org name participant
-	Agreement_create_time         string `json:"Agreement_create_time"`
-	Agreement_update_time         string `json:"Agreement_update_time"`
-	Agreement_remark              string `json:"Agreement_remark"`
-	Agreement_url_image           string `json:"Agreement_url_image"`
-	Agreement_status              string `json:"Agreement_status"`
-	Agreement_hash                string `json:"Agreement_hash"`
+	// {"Exported": ""}
+	ObjectType               string `json:"docType"` //docType is used to distinguish the various types of objects in state database
+	AgreementID              string `json:"AgreementID"`
+	AgreementName            string `json:"AgreementName"`
+	AgreementModelID         string `json:"AgreementModelID"`            // model id
+	AgreementModelCountUse   string `json:"Agreement_model_account_use"` // model Agreement_model_account_use
+	AgreementModelCurrentUse string `json:"AgreementModelCurrentUse"`    // model AgreementModelCurrentUse
+	AgreementIssuer          string `json:"AgreementIssuer"`             // org name issuer
+	AgreementParticipant     string `json:"AgreementParticipant"`        // org name participant
+	AgreementCreateTime      string `json:"AgreementCreateTime"`
+	AgreementUpdateTime      string `json:"AgreementUpdateTime"`
+	AgreementRemark          string `json:"AgreementRemark"`
+	AgreementURLImage        string `json:"AgreementURLImage"`
+	AgreementStatus          string `json:"AgreementStatus"`
+	AgreementHash            string `json:"AgreementHash"`
 }
 
 // ===================================================================================
@@ -58,14 +63,14 @@ type Agreement struct {
 // ===================================================================================
 
 func main() {
-	err := shim.Start(new(MAGNIT_CC))
+	err := shim.Start(new(magnitCC))
 	if err != nil {
 		fmt.Printf("Error starting chaincode: %s", err)
 	}
 }
 
 // Init Function Executes only on initializing or on updating the chain code
-func (t *MAGNIT_CC) Init(APIstub shim.ChaincodeStubInterface) peer.Response {
+func (t *magnitCC) Init(APIstub shim.ChaincodeStubInterface) peer.Response {
 
 	// Initializing AgreementCounterNOAssetAsBytes Number
 
@@ -121,7 +126,8 @@ func getCounter(APIstub shim.ChaincodeStubInterface, AssetType string) int {
 	counterAsset := CounterNO{}
 
 	json.Unmarshal(counterAsBytes, &counterAsset)
-	fmt.Sprintf("Counter Current Value %d of Asset Type %s", counterAsset.Counter, AssetType)
+	fmt.Println("Counter Current Value: ", counterAsset.Counter)
+	fmt.Println("for Asset Type:  ", AssetType)
 
 	return counterAsset.Counter
 }
@@ -138,7 +144,7 @@ func incrementCounter(APIstub shim.ChaincodeStubInterface, AssetType string) int
 	err := APIstub.PutState(AssetType, counterAsBytes)
 	if err != nil {
 
-		fmt.Sprintf("Failed to Increment Counter")
+		fmt.Println("Failed to Increment Counter")
 
 	}
 	return counterAsset.Counter
@@ -153,12 +159,13 @@ func updateCounter(APIstub shim.ChaincodeStubInterface, AssetType string, NewCou
 	counterAsset.Counter = NewCount
 	counterAsBytes, _ = json.Marshal(counterAsset)
 
-	fmt.Sprintf("in updateCounter for asset %v newCount %d", AssetType, NewCount)
+	fmt.Println("in updateCounter for asset Type :", AssetType)
+	fmt.Println("new Count is  :", NewCount)
 
 	err := APIstub.PutState(AssetType, counterAsBytes)
 	if err != nil {
 
-		fmt.Sprintf("Failed to Increment Counter")
+		fmt.Println("Failed to Increment Counter")
 
 		return -1
 
@@ -167,7 +174,7 @@ func updateCounter(APIstub shim.ChaincodeStubInterface, AssetType string, NewCou
 }
 
 // GetTxTimestampChannel Function gets the Transaction time when the chain code was executed it remains same on all the peers where chaincode executes
-func (t *MAGNIT_CC) GetTxTimestampChannel(APIstub shim.ChaincodeStubInterface) (string, error) {
+func (t *magnitCC) GetTxTimestampChannel(APIstub shim.ChaincodeStubInterface) (string, error) {
 	txTimeAsPtr, err := APIstub.GetTxTimestamp()
 	if err != nil {
 		fmt.Printf("Returning error in TimeStamp \n")
@@ -181,15 +188,15 @@ func (t *MAGNIT_CC) GetTxTimestampChannel(APIstub shim.ChaincodeStubInterface) (
 
 // Invoke - Our entry point for Invocations
 // ========================================
-func (t *MAGNIT_CC) Invoke(APIstub shim.ChaincodeStubInterface) peer.Response {
+func (t *magnitCC) Invoke(APIstub shim.ChaincodeStubInterface) peer.Response {
 	function, args := APIstub.GetFunctionAndParameters()
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
 	if function == "initmodel" { //create a new model or student
 		return t.initmodel(APIstub, args)
-	} else if function == "queryByModelId" { // query a model by id, stupid name - -!
-		return t.queryByModelId(APIstub, args)
+	} else if function == "queryByModelID" { // query a model by id, stupid name - -!
+		return t.queryByModelID(APIstub, args)
 	} else if function == "insertAgreementinfo" { //insert a Agreement
 		return t.insertAgreementinfo(APIstub, args)
 	} else if function == "queryByAgreementID" { // query a Agreement
@@ -215,7 +222,7 @@ func (t *MAGNIT_CC) Invoke(APIstub shim.ChaincodeStubInterface) peer.Response {
 // ===========================================================
 // del
 // ===========================================================
-func (t *MAGNIT_CC) del(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) del(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
@@ -233,7 +240,7 @@ func (t *MAGNIT_CC) del(APIstub shim.ChaincodeStubInterface, args []string) peer
 // ============================================================
 // initmodel - create a new model, store into chaincode state
 // ============================================================
-func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) initmodel(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var err error
 
 	if len(args) != 2 {
@@ -247,35 +254,35 @@ func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string
 	}
 
 	// ==== Input sanitation ====
-	fmt.Println("- start init model")
+	ModelName := args[0]
+	UploadOrg := args[1]
 
-	model_name := args[0]
-	upload_org := args[1]
+	fmt.Println("- start init model for name ", ModelName)
 
 	ModelCounterNO := getCounter(APIstub, "ModelCounterNO")
 	ModelCounterNO++
 
-	model_id := "Model" + strconv.Itoa(ModelCounterNO)
+	ModelID := "Model" + strconv.Itoa(ModelCounterNO)
 
 	// ==== Check if model already exists ====
-	modelAsBytes, err := APIstub.GetPrivateData("collectionModel", model_id)
+	modelAsBytes, err := APIstub.GetPrivateData("collectionModel", ModelID)
 	if err != nil {
 		return shim.Error("Failed to get model: " + err.Error())
 	} else if modelAsBytes != nil {
-		fmt.Println("This model already exists: " + model_id)
-		return shim.Error("This model already exists: " + model_id)
+		fmt.Println("This model already exists: " + ModelID)
+		return shim.Error("This model already exists: " + ModelID)
 	}
 
 	// ==== Create model object and marshal to JSON ====
 	objectType := "model"
-	Model := &Model{objectType, model_id, model_name, upload_org}
+	Model := &Model{objectType, ModelID, ModelName, UploadOrg}
 	ModelJSONasBytes, err := json.Marshal(Model)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
 	// === Save model to state ===
-	err = APIstub.PutPrivateData("collectionModel", model_id, ModelJSONasBytes)
+	err = APIstub.PutPrivateData("collectionModel", ModelID, ModelJSONasBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -283,7 +290,7 @@ func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string
 	incCount := incrementCounter(APIstub, "ModelCounterNO")
 
 	// ==== model saved and indexed. Return success ====
-	fmt.Printf("- end init model model_id %d:\n", incCount)
+	fmt.Println("- end init, new count for Model is  :\n", incCount)
 	return shim.Success(nil)
 
 }
@@ -291,7 +298,7 @@ func (t *MAGNIT_CC) initmodel(APIstub shim.ChaincodeStubInterface, args []string
 // ===============================================
 // queryByAgreementID - read a Agreement from chaincode state
 // ===============================================
-func (t *MAGNIT_CC) queryByAgreementID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) queryByAgreementID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var AgreementID, jsonResp string
 	var err error
 
@@ -315,7 +322,7 @@ func (t *MAGNIT_CC) queryByAgreementID(APIstub shim.ChaincodeStubInterface, args
 // =================================================================
 // queryModelByAgreementID - read a Agreement from chaincode state
 // =================================================================
-func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var AgreementID, jsonResp string
 	var err error
 
@@ -340,23 +347,23 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 		return shim.Error(err.Error())
 	}
 	// check of uses
-	countUse, err := strconv.Atoi(Agreement.Agreement_model_count_use)
+	countUse, err := strconv.Atoi(Agreement.AgreementModelCountUse)
 	if err != nil {
-		fmt.Printf("Can't convert to int AgreementAsset.Agreement_model_count_use %s\n", Agreement.Agreement_model_count_use)
+		fmt.Printf("Can't convert to int AgreementAsset.AgreementModelCountUse %s\n", Agreement.AgreementModelCountUse)
 	}
-	currentCount, err := strconv.Atoi(Agreement.Agreement_model_current_count)
+	currentCount, err := strconv.Atoi(Agreement.AgreementModelCurrentUse)
 	if err != nil {
-		fmt.Printf("Can't convert to int AgreementAsset.Agreement_model_current_count %s\n", Agreement.Agreement_model_current_count)
+		fmt.Printf("Can't convert to int AgreementAsset.AgreementModelCurrentUse %s\n", Agreement.AgreementModelCurrentUse)
 	}
 
 	// return error if  currentCount > countUse
 
 	if currentCount >= countUse {
-		jsonResp = "{\"Error\":\"Failed to get the Model - model_current_count_query: " + " Вы достигли лимита разрешенных запросов: " + Agreement.Agreement_model_count_use + "\"}"
+		jsonResp = "{\"Error\":\"Failed to get the Model - model_current_count_query: " + " Вы достигли лимита разрешенных запросов: " + Agreement.AgreementModelCountUse + "\"}"
 		return shim.Error(jsonResp)
 	}
 
-	Agreement.Agreement_model_current_count = strconv.Itoa(currentCount)
+	Agreement.AgreementModelCurrentUse = strconv.Itoa(currentCount)
 
 	eventPayload := "Agreement with ID " + Agreement.AgreementID + " was selected"
 	payloadAsBytes := []byte(eventPayload)
@@ -372,12 +379,12 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 		return shim.Error(err.Error())
 	}
 
-	modelAsbytes, err := APIstub.GetPrivateData("collectionModel", Agreement.Agreement_model_id) //get the model from chaincode state
+	modelAsbytes, err := APIstub.GetPrivateData("collectionModel", Agreement.AgreementModelID) //get the model from chaincode state
 	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + Agreement.Agreement_model_id + "\"}"
+		jsonResp = "{\"Error\":\"Failed to get state for " + Agreement.AgreementModelID + "\"}"
 		return shim.Error(jsonResp)
 	} else if valAsbytes == nil {
-		jsonResp = "{\"Error\":\"model does not exist: " + Agreement.Agreement_model_id + "\"}"
+		jsonResp = "{\"Error\":\"model does not exist: " + Agreement.AgreementModelID + "\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -394,60 +401,60 @@ func (t *MAGNIT_CC) queryModelByAgreementID(APIstub shim.ChaincodeStubInterface,
 // insertAgreementinfo - insert A new Agreement information
 //
 //AgreementID
-//Agreement_name
-//Agreement_model_id
-//Agreement_model_count_use
-//Agreement_model_current_count
-//Agreement_issuer
-//Agreement_participant
-//Agreement_create_time
-//Agreement_update_time
-//Agreement_remark
-//Agreement_url_image
-//Agreement_status string
-//Agreement_hash string
+//AgreementName
+//AgreementModelID
+//AgreementModelCountUse
+//AgreementModelCurrentUse
+//AgreementIssuer
+//AgreementParticipant
+//AgreementCreateTime
+//AgreementUpdateTime
+//AgreementRemark
+//AgreementURLImage
+//AgreementStatus string
+//AgreementHash string
 // ===============================================================
-func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	if len(args) != 9 {
 		return shim.Error("##Incorrect number of arguments. expecting 9 args")
 	}
 
-	Agreement_name := args[0]
-	Agreement_model_id := args[1]
-	Agreement_model_count_use := args[2]
-	Agreement_model_current_count := "0"
-	Agreement_issuer := args[3]
-	Agreement_participant := args[4]
-	Agreement_remark := args[5]
-	Agreement_url_image := args[6]
-	Agreement_status := args[7]
-	Agreement_hash := args[8]
+	AgreementName := args[0]
+	AgreementModelID := args[1]
+	AgreementModelCountUse := args[2]
+	AgreementModelCurrentUse := "0"
+	AgreementIssuer := args[3]
+	AgreementParticipant := args[4]
+	AgreementRemark := args[5]
+	AgreementURLImage := args[6]
+	AgreementStatus := args[7]
+	AgreementHash := args[8]
 
 	AgreementCounterNO := getCounter(APIstub, "AgreementCounterNO")
 	AgreementCounterNO++
 
 	AgreementID := "Agreement" + strconv.Itoa(AgreementCounterNO)
 
-	fmt.Println("###start insertAgreementinfo ID:%s", AgreementID)
+	fmt.Println("###start insertAgreementinfo ID: ", AgreementID)
 
-	Agreement_create_time, errTx := t.GetTxTimestampChannel(APIstub)
+	AgreementCreateTime, errTx := t.GetTxTimestampChannel(APIstub)
 	if errTx != nil {
 		return shim.Error("Returning error")
 	}
 
-	Agreement_update_time, errTx := t.GetTxTimestampChannel(APIstub)
+	AgreementUpdateTime, errTx := t.GetTxTimestampChannel(APIstub)
 	if errTx != nil {
 		return shim.Error("Returning error")
 	}
 
 	// check if model exists
-	valAsBytes, err := APIstub.GetState(Agreement_model_id)
+	valAsBytes, err := APIstub.GetState(AgreementModelID)
 	if err != nil {
-		return shim.Error("Failed to get model:" + Agreement_model_id + "," + err.Error())
+		return shim.Error("Failed to get model:" + AgreementModelID + "," + err.Error())
 	} else if valAsBytes == nil {
-		fmt.Println("Model id does not exist:[" + Agreement_model_id + "]")
-		return shim.Error("Model id does not exist" + Agreement_model_id)
+		fmt.Println("Model id does not exist:[" + AgreementModelID + "]")
+		return shim.Error("Model id does not exist" + AgreementModelID)
 	}
 
 	//check if Agreement exist
@@ -460,7 +467,7 @@ func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, arg
 	//}
 
 	objectType := "Agreement"
-	Agreement := &Agreement{objectType, AgreementID, Agreement_name, Agreement_model_id, Agreement_model_count_use, Agreement_model_current_count, Agreement_issuer, Agreement_participant, Agreement_create_time, Agreement_update_time, Agreement_remark, Agreement_url_image, Agreement_status, Agreement_hash}
+	Agreement := &Agreement{objectType, AgreementID, AgreementName, AgreementModelID, AgreementModelCountUse, AgreementModelCurrentUse, AgreementIssuer, AgreementParticipant, AgreementCreateTime, AgreementUpdateTime, AgreementRemark, AgreementURLImage, AgreementStatus, AgreementHash}
 	AgreementJSONasBytes, err := json.Marshal(Agreement)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -484,7 +491,7 @@ func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, arg
 	}
 	fmt.Println("Event: Agrrement with ID " + Agreement.AgreementID + " was selected")
 
-	fmt.Println("------  end insertAgreementinfo  (success) AgreementID: %d \n", incCount)
+	fmt.Println("------  end insertAgreementinfo  (success) incCount: ", incCount)
 	fmt.Println("------  end insertAgreementinfo  (success) AgreementID: " + AgreementID)
 	return shim.Success(nil)
 }
@@ -492,21 +499,21 @@ func (t *MAGNIT_CC) insertAgreementinfo(APIstub shim.ChaincodeStubInterface, arg
 // ===============================================================
 // queryByModelId - read data for one model from chaincode state
 // ===============================================================
-func (t *MAGNIT_CC) queryByModelId(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
-	var recev_id, jsonResp string
+func (t *magnitCC) queryByModelID(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+	var ModelID, jsonResp string
 	var err error
 
 	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting model_id to query")
+		return shim.Error("Incorrect number of arguments. Expecting ModelID to query")
 	}
 
-	recev_id = args[0]
-	valAsbytes, err := APIstub.GetPrivateData("collectionModel", recev_id) //get the model from chaincode state
+	ModelID = args[0]
+	valAsbytes, err := APIstub.GetPrivateData("collectionModel", ModelID) //get the model from chaincode state
 	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + recev_id + "\"}"
+		jsonResp = "{\"Error\":\"Failed to get state for " + ModelID + "\"}"
 		return shim.Error(jsonResp)
 	} else if valAsbytes == nil {
-		jsonResp = "{\"Error\":\"model does not exist: " + recev_id + "\"}"
+		jsonResp = "{\"Error\":\"model does not exist: " + ModelID + "\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -517,7 +524,7 @@ func (t *MAGNIT_CC) queryByModelId(APIstub shim.ChaincodeStubInterface, args []s
 // ==========================================================
 // approveAgreement - update status of Agreement to agrg[1]
 // ==========================================================
-func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) approveAgreement(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	var err error
 	// check args
@@ -534,7 +541,7 @@ func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args [
 	AgreementID := args[0]
 	status := args[1]
 
-	update_time, errTx := t.GetTxTimestampChannel(APIstub)
+	updateTime, errTx := t.GetTxTimestampChannel(APIstub)
 	if errTx != nil {
 		return shim.Error("Returning error")
 	}
@@ -551,8 +558,8 @@ func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args [
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	Agreement.Agreement_status = status
-	Agreement.Agreement_update_time = update_time
+	Agreement.AgreementStatus = status
+	Agreement.AgreementUpdateTime = updateTime
 
 	valAsbytes, err = json.Marshal(Agreement)
 	if err != nil {
@@ -571,28 +578,28 @@ func (t *MAGNIT_CC) approveAgreement(APIstub shim.ChaincodeStubInterface, args [
 // ==============================================================
 // updateAgreement update count of use in the Agreement count++
 // ==============================================================
-func (t *MAGNIT_CC) updateAgreement(APIstub shim.ChaincodeStubInterface, AgreementAsset Agreement) string {
+func (t *magnitCC) updateAgreement(APIstub shim.ChaincodeStubInterface, AgreementAsset Agreement) string {
 
 	fmt.Printf("In update AgreementId %s -- array %v", AgreementAsset.AgreementID, AgreementAsset)
 
-	update_time, errTx := t.GetTxTimestampChannel(APIstub)
+	updateTime, errTx := t.GetTxTimestampChannel(APIstub)
 	if errTx != nil {
 		return "GetTxTimestampChannel returning error"
 	}
 
-	countUse, err := strconv.Atoi(AgreementAsset.Agreement_model_current_count)
+	countUse, err := strconv.Atoi(AgreementAsset.AgreementModelCurrentUse)
 	if err != nil {
-		fmt.Printf("Can't convert to int AgreementAsset.Agreement_model_count_use %s\n", AgreementAsset.Agreement_model_count_use)
+		fmt.Printf("Can't convert to int AgreementAsset.AgreementModelCountUse %s\n", AgreementAsset.AgreementModelCountUse)
 	}
 
 	countUse++
 
-	AgreementAsset.Agreement_model_current_count = strconv.Itoa(countUse)
-	AgreementAsset.Agreement_update_time = update_time
+	AgreementAsset.AgreementModelCurrentUse = strconv.Itoa(countUse)
+	AgreementAsset.AgreementUpdateTime = updateTime
 
-	fmt.Printf("Increase count:%s for %s", AgreementAsset.Agreement_model_current_count, AgreementAsset.AgreementID)
+	fmt.Printf("Increase count:%s for %s", AgreementAsset.AgreementModelCurrentUse, AgreementAsset.AgreementID)
 
-	AgreementUp := &Agreement{AgreementAsset.ObjectType, AgreementAsset.AgreementID, AgreementAsset.Agreement_name, AgreementAsset.Agreement_model_id, AgreementAsset.Agreement_model_count_use, AgreementAsset.Agreement_model_current_count, AgreementAsset.Agreement_issuer, AgreementAsset.Agreement_participant, AgreementAsset.Agreement_create_time, AgreementAsset.Agreement_update_time, AgreementAsset.Agreement_remark, AgreementAsset.Agreement_url_image, AgreementAsset.Agreement_status, AgreementAsset.Agreement_hash}
+	AgreementUp := &Agreement{AgreementAsset.ObjectType, AgreementAsset.AgreementID, AgreementAsset.AgreementName, AgreementAsset.AgreementModelID, AgreementAsset.AgreementModelCountUse, AgreementAsset.AgreementModelCurrentUse, AgreementAsset.AgreementIssuer, AgreementAsset.AgreementParticipant, AgreementAsset.AgreementCreateTime, AgreementAsset.AgreementUpdateTime, AgreementAsset.AgreementRemark, AgreementAsset.AgreementURLImage, AgreementAsset.AgreementStatus, AgreementAsset.AgreementHash}
 
 	valJSONasBytes, err := json.Marshal(AgreementUp)
 	if err != nil {
@@ -604,7 +611,7 @@ func (t *MAGNIT_CC) updateAgreement(APIstub shim.ChaincodeStubInterface, Agreeme
 		return "error: Failed to PutState AgreementID, AgreementAsset"
 	}
 
-	fmt.Println("Succes update Agreement  %v", valJSONasBytes)
+	fmt.Println("Succes update Agreement: ", valJSONasBytes)
 	return "Success"
 }
 
@@ -612,7 +619,7 @@ func (t *MAGNIT_CC) updateAgreement(APIstub shim.ChaincodeStubInterface, Agreeme
 // queryAllAgreements in the channel
 // ===============================================
 
-func (t *MAGNIT_CC) queryAllAgreements(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) queryAllAgreements(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	queryString := "{\"selector\":{\"docType\":\"Agreement\"}}"
 
@@ -625,7 +632,7 @@ func (t *MAGNIT_CC) queryAllAgreements(APIstub shim.ChaincodeStubInterface, args
 }
 
 // query all assets
-func (t *MAGNIT_CC) queryAllAsset(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) queryAllAsset(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	startKey := ""
 
@@ -698,7 +705,7 @@ func (t *MAGNIT_CC) queryAllAsset(APIstub shim.ChaincodeStubInterface, args []st
 // ===============================================
 // createIndexformodel - build an index for an model to
 // ===============================================
-func (t *MAGNIT_CC) createIndexformodel(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) createIndexformodel(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	//return shim.Success()
 	return shim.Success(nil)
@@ -707,7 +714,7 @@ func (t *MAGNIT_CC) createIndexformodel(APIstub shim.ChaincodeStubInterface, arg
 // ===========================================================================================
 // getHistoryForRecord returns the historical state transitions for a given key of a record
 // ===========================================================================================
-func (t *MAGNIT_CC) getHistoryForRecord(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *magnitCC) getHistoryForRecord(APIstub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	if len(args) < 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")

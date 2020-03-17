@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Init(t *testing.T) {
-	magnitCC := new(MAGNIT_CC)
+	magnitCC := new(magnitCC)
 	mockStub := shim.NewMockStub("mockstub", magnitCC)
 	txID := "mocktxID"
 
@@ -28,7 +28,7 @@ func TestInvokeInitMagnit(t *testing.T) {
 	fmt.Println("Entering TestInvokeInitMagnit")
 
 	// Instantiate mockStub using TrashTraceDemo as the target chaincode to unit test
-	stub := shim.NewMockStub("mockStub", new(MAGNIT_CC))
+	stub := shim.NewMockStub("mockStub", new(magnitCC))
 	if stub == nil {
 		t.Fatalf("MockStub creation failed")
 	}
